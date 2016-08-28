@@ -19,6 +19,7 @@ $('document').ready(function() {
     var viz = d3.select("#viz-wrapper")
         .append("svg")
         .attr("id", "viz")
+        .attr("class", "viz-class")
         .attr('height', height + margin.top + margin.bottom)
         .attr('width', width + margin.left + margin.right)
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -57,6 +58,22 @@ $('document').ready(function() {
             .orient("right")
             .ticks(25);
 
+        var tooltip = d3.select("#viz-wrapper").append("div")
+            .style("opacity", "1")
+            .style("position", "absolute")
+            .style("z-index", "10")
+            .style("visibility", "hidden")
+
+        viz.append("g")
+            .attr("class", "axis")
+            .call(yAxis);
+
+        viz.append("g")
+            .attr("class", "axis")
+            .call(xAxis)
+            .attr("transform", "translate(0," + (height + 10) + ")");
+
+
         lines = viz.selectAll('rect')
             .data(data.data)
             .enter()
@@ -68,32 +85,30 @@ $('document').ready(function() {
             .attr('width', width / data.data.length);
 
         lines.attr('x', function(d) {
-                date = parseTime.parse(d[0]);
-                return xScale(date);
-            }).attr('height', function(d) {
-                return (yScale(0) - yScale(d[1]));
-            });
+            date = parseTime.parse(d[0]);
+            return xScale(date);
+        }).attr('height', function(d) {
+            return (yScale(0) - yScale(d[1]));
+        });
 
-        lines.on("mouseenter", function(d,i) {
-        	line=d3.select(this);
-        	line.attr("class", "mouseover");
+        lines.on("mouseenter", function(d, i) {
+
+            line = d3.select(this);
+            line.attr("class", "mouseover");
+            return tooltip.style('visibility', 'visible')
+                .style("left", (d3.event.pageX+16)+"px")
+                .style("top", (d3.event.pageY+16)+"px")
+                .html("<span>"+d[0]+"</span><br><span>"+d[1]+"</span>");
         });
 
         lines.on('mouseleave', function(d, i) {
-        	line=d3.select(this);
-        	line.classed('mouseover', false);
-        	line.attr("class", "bar");
+            line = d3.select(this);
+            line.classed('mouseover', false);
+            line.attr("class", "bar");
+            return tooltip.style("visibility", "hidden");
 
         });
 
-        viz.append("g")
-            .attr("class", "axis")
-            .call(yAxis);
-
-        viz.append("g")
-            .attr("class", "axis")
-            .call(xAxis)
-            .attr("transform", "translate(0," + (height+10) + ")");
 
 
     });
