@@ -1,47 +1,100 @@
 var url = "https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/GDP-data.json";
-var height = 800;
-var width = 800;
+//var height = $(window).height() - 50;
+//var width = $(window).width() - 50;
+var canvasHeight = 600;
+var canvasWidth = 800;
 var padding = 50;
+var barGap = 1;
+var margin = {
+    top: 20,
+    bottom: 40,
+    left: 30,
+    right: 40
+};
+var width = canvasWidth - margin.left - margin.right;
+var height = canvasHeight - margin.bottom - margin.top;
 
 $('document').ready(function() {
 
-    var viz = d3.select("#viz-wrapper").append("svg").attr("id", "viz").attr('height', height).attr('width', width);
+    var viz = d3.select("#viz-wrapper")
+        .append("svg")
+        .attr("id", "viz")
+        .attr('height', height + margin.top + margin.bottom)
+        .attr('width', width + margin.left + margin.right)
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
 
     d3.json(url, function(err, data) {
-        var minDate = new Date(data.data[0][0]);
-        var maxDate = new Date(data.data[274][0]);
-        console.log(data.data);
-        // var yMax = d3.max(data.data, function(d) {
-        // 	return d[1];
-        // });
-        // var yMin = d3.min(data.data, function(d) {
-        // 	return d[1];
-        // });
-        var yDomain = d3.extent(data.data, function(d) {
-        	return d[1];
+        var parseTime = d3.time.format("%Y-%m-%d");
+
+        var xDomain = d3.extent(data.data, function(d) {
+            return parseTime.parse(d[0]);
         });
-        yScale=d3.scale.linear().range([height, 0]);
-        //yScale.domain(yDomain);
-        yAxis = d3.svg.axis().scale(yScale)
-        					.orient("left")
-        					.ticks("25");
-        dots = viz.selectAll('circle')
+
+        var yDomain = d3.extent(data.data, function(d) {
+            return d[1];
+        });
+
+        var yScale = d3.scale
+            .linear()
+            .domain(yDomain)
+            .range([height, 0]);
+
+        var xScale = d3.time
+            .scale()
+            .domain(xDomain)
+            .range([0, width]);
+
+        var xAxis = d3.svg
+            .axis()
+            .scale(xScale)
+            .orient("bottom")
+            .ticks(10);
+
+        var yAxis = d3.svg
+            .axis()
+            .scale(yScale)
+            .orient("right")
+            .ticks(25);
+
+        lines = viz.selectAll('rect')
             .data(data.data)
             .enter()
-            .append('circle');
-        dots.attr('r', function(d) {
-            return Math.abs(d[1] / 500);
-        }).attr('cx', function(d) {
-            return Math.max(0 + padding, Math.random() * width - padding);
-        }).attr('cy', function(d) {
-            return Math.max(0 + padding, Math.random() * width - padding);
-        }).style('fill', function(d) {
-            if (d[1] < 5000) {
-                return "blue";
-            } else {
-                return "red";
-            }
-        });
-    });
+            .append('rect')
+            .attr('y', function(d) {
+                return yScale(d[1]);
+            })
+            .attr('class', 'bar')
+            .attr('width', width / data.data.length);
 
+        lines.attr('x', function(d) {
+                date = parseTime.parse(d[0]);
+                return xScale(date);
+            }).attr('height', function(d) {
+                return (yScale(0) - yScale(d[1]));
+            });
+
+        lines.on("mouseenter", function(d,i) {
+        	line=d3.select(this);
+        	line.attr("class", "mouseover");
+        });
+
+        lines.on('mouseleave', function(d, i) {
+        	line=d3.select(this);
+        	line.classed('mouseover', false);
+        	line.attr("class", "bar");
+
+        });
+
+        viz.append("g")
+            .attr("class", "axis")
+            .call(yAxis);
+
+        viz.append("g")
+            .attr("class", "axis")
+            .call(xAxis)
+            .attr("transform", "translate(0," + (height+10) + ")");
+
+
+    });
 });
