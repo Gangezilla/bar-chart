@@ -6,13 +6,19 @@ var canvasWidth = 800;
 var padding = 50;
 var barGap = 1;
 var margin = {
-    top: 20,
+    top: 10,
     bottom: 40,
     left: 30,
     right: 40
 };
 var width = canvasWidth - margin.left - margin.right;
 var height = canvasHeight - margin.bottom - margin.top;
+var months = [
+    "January", "February", "March",
+    "April", "May", "June", "July",
+    "August", "September", "October",
+    "November", "December"
+];
 
 $('document').ready(function() {
 
@@ -59,10 +65,9 @@ $('document').ready(function() {
             .ticks(25);
 
         var tooltip = d3.select("#viz-wrapper").append("div")
-            .style("opacity", "1")
+            .style("opacity", "0")
             .style("position", "absolute")
-            .style("z-index", "10")
-            .style("visibility", "hidden")
+            .style("z-index", "10");
 
         viz.append("g")
             .attr("class", "axis")
@@ -72,7 +77,6 @@ $('document').ready(function() {
             .attr("class", "axis")
             .call(xAxis)
             .attr("transform", "translate(0," + (height + 10) + ")");
-
 
         lines = viz.selectAll('rect')
             .data(data.data)
@@ -92,20 +96,27 @@ $('document').ready(function() {
         });
 
         lines.on("mouseenter", function(d, i) {
+            var date = new Date(d[0]);
+            var monthIndex = date.getMonth();
+            var year = date.getFullYear();
+            var fDate = (months[monthIndex] + ", " + year);
 
             line = d3.select(this);
             line.attr("class", "mouseover");
-            return tooltip.style('visibility', 'visible')
-                .style("left", (d3.event.pageX+16)+"px")
-                .style("top", (d3.event.pageY+16)+"px")
-                .html("<span>"+d[0]+"</span><br><span>"+d[1]+"</span>");
+            return tooltip.style('opacity', '0.9')
+                .style("left", (d3.event.pageX + 30) + "px")
+                .style("top", (d3.event.pageY - 50) + "px")
+                .style("border-radius", "5px")
+                .style("background-color", "#eee")
+                .style("padding", "10px")
+                .html("<span class='year'>" + fDate + "</span><br><span class='amount'>$" + d[1] + " Billion </span>");
         });
 
         lines.on('mouseleave', function(d, i) {
             line = d3.select(this);
             line.classed('mouseover', false);
             line.attr("class", "bar");
-            return tooltip.style("visibility", "hidden");
+            return tooltip.style("opacity", "0");
 
         });
 
